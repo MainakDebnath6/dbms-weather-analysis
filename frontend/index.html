@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Weather Analytics</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Chart.js for beautiful charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        /* --- CORE STYLES & VISUAL APPEAL --- */
+        :root {
+            --primary-color: #00d4ff; /* Cyan accent */
+            --bg-color: #0b1120; /* Deep Dark Blue */
+            --card-color: #1a253f; /* Slightly lighter deep blue */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: #d1d5db; /* Gray 300 */
+            transition: background-color 0.5s ease;
+            position: relative;
+        }
+        
+        /* Subtle Background Gradient Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 10% 20%, rgba(10, 20, 40, 0.9) 0%, rgba(5, 10, 20, 1) 100%);
+            z-index: -1;
+            opacity: 0.95;
+        }
+
+        /* Card Style: Glassy, Shadowed, and Interactive */
+        .card {
+            background-color: var(--card-color);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.15), 0 0 10px var(--primary-color);
+        }
+        
+        /* Primary Button Style */
+        .btn-primary {
+            background-image: linear-gradient(to right, #4c62f8, #00d4ff); 
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease-in-out;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 6px 18px rgba(0, 212, 255, 0.4);
+            transform: scale(1.02);
+        }
+        
+        /* Input Field Styling */
+        input, select {
+            background-color: #0d1326; /* Darker input */
+            border-color: #4b5563;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, select:focus {
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-12 flex flex-col items-center">
+
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboardView" class="w-full max-w-7xl mx-auto">
+        <header class="mb-10 flex flex-col md:flex-row justify-between items-center text-center md:text-left border-b border-gray-700 pb-4">
+            <div>
+                <h1 class="text-5xl font-extrabold text-white tracking-tight">Nexus <span class="text-[var(--primary-color)]">Analytics</span></h1>
+                <p class="text-lg text-gray-400 mt-1">Hello, <span id="userName" class="font-semibold text-white">Analyst</span> | MySQL Data Environment</p>
+            </div>
+            <!-- No sign-out button as Firebase Auth is not used -->
+        </header>
+
+        <!-- Main Grid Layout -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Column 1: Data Entry -->
+            <div class="lg:col-span-1 space-y-8">
+                <!-- Data Entry Card -->
+                <div class="card p-6 rounded-xl space-y-6">
+                    <h2 class="text-2xl font-semibold border-b border-gray-600 pb-3 text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Record New Data Point
+                    </h2>
+                    <form id="weatherForm" class="space-y-4">
+                        <div>
+                            <label for="city" class="block text-sm font-medium text-gray-400 mb-1">City/Location</label>
+                            <input type="text" id="city" required placeholder="e.g., London, Tokyo, New York" class="w-full p-3 rounded-lg border focus:ring-blue-500 transition duration-150">
+                        </div>
+                        <div>
+                            <label for="date" class="block text-sm font-medium text-gray-400 mb-1">Date</label>
+                            <input type="date" id="date" required class="w-full p-3 rounded-lg border focus:ring-blue-500 transition duration-150">
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label for="temperature" class="block text-sm font-medium text-gray-400 mb-1">Temp (°C)</label>
+                                <input type="number" id="temperature" required step="0.1" placeholder="25.5" class="w-full p-3 rounded-lg border focus:ring-blue-500 transition duration-150">
+                            </div>
+                            <div>
+                                <label for="humidity" class="block text-sm font-medium text-gray-400 mb-1">Humidity (%)</label>
+                                <input type="number" id="humidity" required min="0" max="100" placeholder="70" class="w-full p-3 rounded-lg border focus:ring-blue-500 transition duration-150">
+                            </div>
+                            <div>
+                                <label for="windSpeed" class="block text-sm font-medium text-gray-400 mb-1">Wind (km/h)</label>
+                                <input type="number" id="windSpeed" required step="0.1" placeholder="15.2" class="w-full p-3 rounded-lg border focus:ring-blue-500 transition duration-150">
+                            </div>
+                        </div>
+                        <button type="submit" id="submitBtn" class="btn-primary w-full text-white font-bold py-3 px-4 rounded-lg shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150">
+                            <span id="submitText">Save Data Point</span>
+                            <span id="loadingSpinner" class="hidden animate-spin h-5 w-5 border-2 border-white border-t-[var(--primary-color)] rounded-full inline-block ml-2"></span>
+                        </button>
+                    </form>
+                    <p id="messageBox" class="text-sm text-center pt-2"></p>
+                </div>
+                
+                <!-- New: Stats Panel -->
+                <div class="card p-6 rounded-xl">
+                    <h2 class="text-2xl font-semibold border-b border-gray-600 pb-3 text-white flex items-center">
+                         <svg class="w-6 h-6 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0h4m-4 0h.01M9 19h4m5 0v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+                        Data Metrics
+                    </h2>
+                    <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div class="bg-gray-700/50 p-3 rounded-lg text-center border border-gray-600">
+                            <p class="text-sm font-medium text-gray-400">Analysis Items</p>
+                            <p id="totalRecords" class="text-3xl font-bold text-[var(--primary-color)] transition duration-300">...</p>
+                        </div>
+                        <div class="bg-gray-700/50 p-3 rounded-lg text-center border border-gray-600">
+                            <p class="text-sm font-medium text-gray-400">Unique Cities</p>
+                            <p id="uniqueCities" class="text-3xl font-bold text-green-400 transition duration-300">...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Column 2 & 3: Visualization and History -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Visualization Card -->
+                <div class="card p-6 rounded-xl">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-600 pb-3 mb-4">
+                        <h2 class="text-2xl font-semibold text-white flex items-center mb-2 sm:mb-0">
+                            <svg class="w-6 h-6 mr-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 10h18"></path></svg>
+                            City Metric Comparison
+                        </h2>
+                        <!-- Metric Selector -->
+                        <div class="flex items-center space-x-2">
+                            <label for="metricSelector" class="text-sm font-medium text-gray-400">View Metric:</label>
+                            <select id="metricSelector" class="p-2 rounded-lg bg-gray-900 border border-gray-600 text-white text-sm focus:ring-blue-500">
+                                <option value="temperature">Temperature (°C)</option>
+                                <option value="wind_speed">Wind Speed (km/h)</option>
+                                <option value="humidity">Humidity (%)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
+                        <canvas id="tempChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- History Card -->
+                <div class="card p-6 rounded-xl">
+                    <h2 class="text-2xl font-semibold border-b border-gray-600 pb-3 text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.592 1M12 21a9 9 0 100-18 9 9 0 000 18z"></path></svg>
+                        Recent Data History (From MySQL)
+                    </h2>
+                    <div id="dataList" class="mt-4 space-y-3 max-h-64 overflow-y-auto pr-2">
+                        <!-- Data items will be injected here -->
+                        <div class="text-center text-gray-500 p-4" id="loadingDataText">Fetching data from API...</div>
+                    </div>
+                    <p id="historyMessage" class="text-sm text-center text-red-400 pt-2 hidden">Error loading history. Check API connection.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // --- API CONFIGURATION ---
+        const API_BASE_URL = 'http://localhost:3000/api'; 
+        
+        let chartInstance = null;
+        
+        // --- DOM Elements ---
+        const messageBox = document.getElementById('messageBox');
+        const form = document.getElementById('weatherForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const submitText = document.getElementById('submitText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const dataList = document.getElementById('dataList');
+        const loadingDataText = document.getElementById('loadingDataText');
+        const totalRecordsElement = document.getElementById('totalRecords');
+        const uniqueCitiesElement = document.getElementById('uniqueCities');
+        const metricSelector = document.getElementById('metricSelector'); 
+        const historyMessage = document.getElementById('historyMessage');
+
+        // --- CHART METRIC CONFIGURATION ---
+        const metricMap = {
+            temperature: { 
+                label: 'Average Temperature', 
+                unit: '°C', 
+                hueRange: [240, 0] // Blue (Cool) to Red (Hot)
+            },
+            wind_speed: { 
+                label: 'Average Wind Speed', 
+                unit: 'km/h', 
+                hueRange: [240, 40] // Blue (Low) to Yellow/Orange (High)
+            },
+            humidity: { 
+                label: 'Average Humidity', 
+                unit: '%', 
+                hueRange: [200, 120] // Cyan (Dry) to Green (Wet)
+            }
+        };
+
+        // --- UTILITY FUNCTIONS ---
+        
+        function showMessage(msg, className) {
+            messageBox.textContent = msg;
+            messageBox.className = `text-sm text-center pt-2 ${className || 'text-green-400'}`;
+            setTimeout(() => { messageBox.textContent = ''; }, 5000);
+        }
+
+        function setFormLoading(isLoading) {
+            submitBtn.disabled = isLoading;
+            if (isLoading) {
+                submitText.textContent = 'Processing...';
+                loadingSpinner.classList.remove('hidden');
+                submitBtn.classList.add('opacity-70');
+            } else {
+                submitText.textContent = 'Save Data Point';
+                loadingSpinner.classList.add('hidden');
+                submitBtn.classList.remove('opacity-70');
+            }
+        }
+
+        /**
+         * Maps a metric value to a color based on its position in the range.
+         */
+        function getMetricColor(value, minVal, maxVal, [startHue, endHue]) {
+            if (minVal === maxVal || maxVal === 0 || value === 0) {
+                return 'hsl(210, 30%, 55%)'; 
+            }
+
+            // Normalize value to a position between 0 and 1
+            const normalized = Math.max(0, Math.min(1, (value - minVal) / (maxVal - minVal)));
+            
+            // Linear interpolation of the hue
+            const hue = Math.round(startHue + normalized * (endHue - startHue));
+            
+            return `hsl(${hue}, 90%, 55%)`; 
+        }
+
+        // --- API DATA FETCHING ---
+        
+        // Fetches aggregated data for the chart
+        async function fetchAnalysisData() {
+            loadingDataText.textContent = "Fetching analysis data...";
+            historyMessage.classList.add('hidden');
+            const metric = metricSelector.value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/analysis?metric=${metric}`);
+                
+                if (!response.ok) {
+                    throw new Error(`API returned status ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update dashboard with fetched analysis data
+                updateDataMetrics(data);
+                updateChart(data); 
+                
+            } catch (error) {
+                console.error("Error fetching analysis data:", error);
+                loadingDataText.textContent = "Failed to connect to Node.js API (localhost:3000). Is the server running?";
+                historyMessage.classList.remove('hidden');
+                updateDataMetrics([]);
+                updateChart([]); // Clear chart on error
+            } finally {
+                loadingDataText.classList.add('hidden');
+            }
+        }
+        
+        // Fetches the raw history data
+        async function fetchHistoryData() {
+             historyMessage.classList.add('hidden');
+             dataList.innerHTML = `<div class="text-center text-gray-500 p-4">Loading history...</div>`;
+
+             try {
+                const response = await fetch(`${API_BASE_URL}/history`);
+                
+                if (!response.ok) {
+                    throw new Error(`API returned status ${response.status}`);
+                }
+                
+                const data = await response.json();
+                updateDataList(data);
+                
+            } catch (error) {
+                console.error("Error fetching history data:", error);
+                dataList.innerHTML = `<p class="text-center text-red-400 py-4">Error connecting to the API to load history.</p>`;
+            }
+        }
+        
+        // --- CORE APPLICATION LOGIC ---
+        
+        function updateDashboard() {
+             // Fetch both data sources concurrently
+             fetchAnalysisData();
+             fetchHistoryData();
+        }
+
+
+        // 1. Add Data (Write operation to API)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setFormLoading(true);
+
+            const record = {
+                city: document.getElementById('city').value.trim(),
+                date: document.getElementById('date').value,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                humidity: parseInt(document.getElementById('humidity').value, 10),
+                windSpeed: parseFloat(document.getElementById('windSpeed').value)
+            };
+
+            if (record.city.length < 2 || isNaN(record.temperature) || isNaN(record.humidity) || isNaN(record.windSpeed)) {
+                showMessage('Please ensure all fields are valid numbers.', 'text-red-400');
+                setFormLoading(false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/data`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(record)
+                });
+                
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || `API returned status ${response.status}`);
+                }
+                
+                showMessage(`Data point for ${record.city} added successfully!`, 'text-green-400');
+                form.reset();
+                
+                // Refetch both history and analysis data
+                updateDashboard();
+
+            } catch (error) {
+                console.error("Error adding document:", error.message);
+                showMessage(`Error: ${error.message}`, 'text-red-400');
+            } finally {
+                setFormLoading(false);
+            }
+        });
+        
+        // Listener for Metric Selector Change
+        metricSelector.addEventListener('change', () => {
+            // Refetch analysis data only when metric changes
+            fetchAnalysisData();
+        });
+
+
+        // --- UI RENDERING ---
+        
+        function updateDataMetrics(data) {
+            const uniqueCities = new Set(data.map(d => d.city_name.toUpperCase().trim())).size;
+            
+            totalRecordsElement.textContent = data.length > 0 ? 'LIVE' : '0';
+            uniqueCitiesElement.textContent = uniqueCities;
+        }
+        
+        function updateDataList(data) {
+            dataList.innerHTML = '';
+            
+            if (data.length === 0) {
+                dataList.innerHTML = `<p class="text-center text-gray-500 py-4">No recent records found in the database.</p>`;
+                return;
+            }
+
+            data.forEach(record => {
+                // Ensure date is formatted correctly (it comes from MySQL as a string or Date object)
+                const dateStr = new Date(record.recorded_at).toLocaleString();
+
+                dataList.innerHTML += `
+                    <div class="flex justify-between items-center p-3 rounded-lg bg-gray-600/30 hover:bg-gray-500/50 transition duration-150 border border-gray-700">
+                        <div class="flex-grow">
+                            <p class="font-semibold text-white">${record.city_name} (${record.record_date.split('T')[0]})</p>
+                            <p class="text-sm text-gray-300">Temp: <span class="text-cyan-300">${record.temperature}°C</span> | Hum: ${record.humidity}% | Wind: ${record.wind_speed} km/h</p>
+                        </div>
+                        <!-- Delete function is omitted here as it requires a DELETE API route on the backend -->
+                    </div>
+                `;
+            });
+        }
+
+
+        // --- CHARTING LOGIC (Chart.js) ---
+
+        function updateChart(data) {
+            const selectedMetric = metricSelector.value;
+            // Get configuration for the selected metric
+            const configData = metricMap[selectedMetric] || metricMap.temperature;
+
+            // 1. Prepare Data
+            const labels = data.map(d => d.city_name);
+            const averageValues = data.map(d => {
+                 const value = parseFloat(d.average_value);
+                 return isNaN(value) ? 0 : value; // Ensure no NaN issues
+            });
+            
+            // 2. Dynamic Color Grading
+            const valuesForRange = averageValues.filter(v => v !== 0); 
+            const minVal = valuesForRange.length > 0 ? Math.min(...valuesForRange) : 0;
+            const maxVal = valuesForRange.length > 0 ? Math.max(...valuesForRange) : 0;
+
+            const dynamicColors = averageValues.map(value => 
+                getMetricColor(value, minVal, maxVal, configData.hueRange)
+            );
+
+            const chartData = {
+                labels: labels,
+                datasets: [{
+                    label: configData.label,
+                    data: averageValues,
+                    backgroundColor: dynamicColors,
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    borderRadius: 8, 
+                }]
+            };
+
+            const config = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 700, 
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true, 
+                            grid: { color: 'rgba(75, 85, 99, 0.2)', drawBorder: false },
+                            ticks: { color: '#9ca3af', callback: function(value) { return value + configData.unit; } },
+                            title: { display: true, text: `${configData.label} (${configData.unit})`, color: '#00d4ff' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af' }
+                        }
+                    }
+                }
+            };
+
+            const ctx = document.getElementById('tempChart').getContext('2d');
+
+            if (chartInstance) {
+                // Update existing chart
+                chartInstance.data = chartData;
+                chartInstance.options.scales.y.title.text = `${configData.label} (${configData.unit})`;
+                chartInstance.options.scales.y.ticks.callback = function(value) { return value + configData.unit; };
+                chartInstance.update();
+            } else {
+                // Create new chart
+                chartInstance = new Chart(ctx, config);
+            }
+        }
+
+        window.onload = () => {
+             // Initial load of all data
+             updateDashboard();
+        }
+
+    </script>
+
+</body>
+</html>
