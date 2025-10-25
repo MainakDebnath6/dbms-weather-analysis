@@ -20,12 +20,13 @@ app.use(express.json()); // To parse JSON bodies
 
 // --- 1. MySQL Connection Configuration ---
 const dbConfig = {
-    // !!! IMPORTANT: NGROK ADDRESS - Updated with your live tunnel (0.tcp.in.ngrok.io:15508) !!!
-    host: '0.tcp.in.ngrok.io', 
-    user: 'root', 
-    password: '', 
-    database: 'nexus_db', 
-    port: 15508, 
+    // !!! FREESQLDATABASE.COM LIVE CREDENTIALS !!!
+    host: 'sql12.freesqldatabase.com',       // DatabaseHost
+    user: 'sql12804470',                     // DatabaseUsername
+    password: 'fiKzxrFlYh',                 // DatabasePassword
+    database: 'sql12804470',                 // DatabaseName (often same as username)
+    port: 3306, // Standard MySQL port
+    
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -42,27 +43,20 @@ pool.getConnection()
     })
     .catch(err => {
         console.error("FAILURE: Cannot connect to MySQL.");
-        console.error("Check 1: Is XAMPP/MAMP running?");
-        console.error("Check 2: Is the ngrok tunnel running (`ngrok tcp 3306`)?");
-        console.error("Check 3: Are the HOST and PORT in server.js updated to the NEW ngrok address?");
+        console.error("Check 1: Is your code using the correct FREESQLDATABASE credentials?");
+        console.error("Check 2: Is the Render server's IP whitelisted on Freesqldatabase.com's firewall?");
         console.error("Error Detail:", err.message);
     });
 
 // --- 2. API Endpoint for Data Analysis (The Visualization Data) ---
-
+// ... (rest of the server.js code remains the same)
 app.get('/api/analysis', async (req, res) => {
-    // Determine which metric to analyze based on the query parameter
-    const metric = req.query.metric || 'temperature'; // Default to temperature
-
-    // Sanitize the metric input to prevent SQL injection and ensure it's a valid column
-    // The names here MUST match the database columns exactly (case sensitive on some OS/configs)
+    const metric = req.query.metric || 'temperature'; 
     const validMetrics = ['temperature', 'humidity', 'wind_speed']; 
     if (!validMetrics.includes(metric)) {
         return res.status(400).json({ error: 'Invalid metric selected.' });
     }
 
-    // SQL query to calculate the average of the selected metric grouped by city name.
-    // Use CAST to ensure the average result is treated as a DECIMAL, preventing possible type errors.
     const sql = `
         SELECT 
             c.city_name, 
@@ -75,10 +69,9 @@ app.get('/api/analysis', async (req, res) => {
 
     try {
         const [rows] = await pool.query(sql);
-        res.json(rows); // Send the results back to the frontend
+        res.json(rows); 
     } catch (error) {
         console.error('Error executing analysis query:', error);
-        // Log the actual SQL error details to help debug the 500 error
         console.error('SQL Error Code:', error.code);
         console.error('SQL Message:', error.sqlMessage);
         res.status(500).json({ error: 'Failed to retrieve analysis data due to database error.' });
@@ -99,25 +92,20 @@ app.post('/api/data', async (req, res) => {
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        // 1. Check if City exists, or insert it if new
         let [cityRows] = await connection.query('SELECT city_id FROM Cities WHERE city_name = ?', [city]);
         let cityId;
 
         if (cityRows.length === 0) {
-            // City does not exist, insert it
             const [result] = await connection.query('INSERT INTO Cities (city_name) VALUES (?)', [city]);
             cityId = result.insertId;
         } else {
             cityId = cityRows[0].city_id;
         }
 
-        // 2. Insert the weather data record
-        // The column names here MUST match the database exactly (temperature, humidity, wind_speed)
         const insertSql = `
             INSERT INTO WeatherData (city_id, record_date, temperature, humidity, wind_speed)
             VALUES (?, ?, ?, ?, ?);
         `;
-        // Note: windSpeed from request body must map to wind_speed column in DB
         const insertValues = [cityId, date, temperature, humidity, windSpeed];
 
         await connection.query(insertSql, insertValues);
@@ -128,11 +116,9 @@ app.post('/api/data', async (req, res) => {
     } catch (error) {
         if (connection) await connection.rollback();
         console.error('Error processing data insertion:', error);
-        // Log the actual SQL error details to help debug the 500 error
         console.error('SQL Error Code:', error.code);
         console.error('SQL Message:', error.sqlMessage);
         
-        // Check for specific unique constraint error (city_id, record_date)
         if (error.code === 'ER_DUP_ENTRY') {
              return res.status(409).json({ error: 'Data for this city on this date already exists.' });
         }
@@ -145,8 +131,6 @@ app.post('/api/data', async (req, res) => {
 // --- 4. API Endpoint for Recent History ---
 
 app.get('/api/history', async (req, res) => {
-    // SQL query to fetch the last 10 records, ordered by newest first, joining city names.
-    // Ensure the table names (WeatherData, Cities) match the database exactly!
     const sql = `
         SELECT 
             w.record_date, 
@@ -166,7 +150,6 @@ app.get('/api/history', async (req, res) => {
         res.json(rows);
     } catch (error) {
         console.error('Error executing history query:', error);
-        // Log the actual SQL error details to help debug the 500 error
         console.error('SQL Error Code:', error.code);
         console.error('SQL Message:', error.sqlMessage);
         res.status(500).json({ error: 'Failed to retrieve history data due to database error.' });
