@@ -19,11 +19,12 @@
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
             color: #d1d5db; /* Gray 300 */
-            transition: background-color 0.5s ease;
+            /* Added smooth transition for background changes */
+            transition: background-color 0.5s ease-in-out; 
             position: relative;
         }
         
-        /* Subtle Background Gradient Effect */
+        /* Subtle Background Gradient Effect - Optimized */
         body::before {
             content: '';
             position: fixed;
@@ -69,6 +70,23 @@
             border-color: var(--primary-color) !important;
             box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.3);
         }
+
+        /* Custom Calendar Styles */
+        #calendarModal {
+            z-index: 1000;
+        }
+        .calendar-day {
+            transition: all 0.1s;
+        }
+        .calendar-day:hover:not(.day-disabled):not(.day-selected) {
+            background-color: rgba(0, 212, 255, 0.2);
+        }
+        .day-selected {
+            background-color: var(--primary-color);
+            color: white !important;
+            font-weight: bold;
+            border-radius: 9999px;
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-12 flex flex-col items-center">
@@ -80,7 +98,6 @@
                 <h1 class="text-5xl font-extrabold text-white tracking-tight">Nexus <span class="text-[var(--primary-color)]">Analytics</span></h1>
                 <p class="text-lg text-gray-400 mt-1">Hello, <span id="userName" class="font-semibold text-white">Analyst</span> | MySQL Data Environment</p>
             </div>
-            <!-- No sign-out button as Firebase Auth is not used -->
         </header>
 
         <!-- Main Grid Layout -->
@@ -99,9 +116,17 @@
                             <label for="city" class="block text-sm font-medium text-gray-400 mb-1">City/Location</label>
                             <input type="text" id="city" required placeholder="e.g., London, Tokyo, New York" class="w-full p-3 rounded-lg border focus:ring-blue-500 transition duration-150">
                         </div>
-                        <div>
-                            <label for="date" class="block text-sm font-medium text-gray-400 mb-1">Date</label>
-                            <input type="date" id="date" required class="w-full p-3 rounded-lg border focus:ring-blue-500 transition duration-150">
+                        <!-- Custom Date Picker Input Field -->
+                        <div class="relative">
+                            <label for="dateDisplay" class="block text-sm font-medium text-gray-400 mb-1">Date</label>
+                            <div id="dateDisplayContainer" class="flex">
+                                <input type="text" id="dateDisplay" readonly required placeholder="Click to select date" class="w-full p-3 rounded-l-lg border focus:ring-blue-500 transition duration-150 cursor-pointer text-gray-300">
+                                <button type="button" id="datePickerBtn" class="bg-blue-600 hover:bg-blue-700 p-3 rounded-r-lg text-white">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </button>
+                            </div>
+                            <!-- Hidden input field to hold the actual YYYY-MM-DD value -->
+                            <input type="hidden" id="date" name="date" required>
                         </div>
                         <div class="grid grid-cols-3 gap-4">
                             <div>
@@ -185,9 +210,33 @@
         </main>
     </div>
 
+    <!-- CUSTOM CALENDAR MODAL -->
+    <div id="calendarModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center transition-opacity duration-300">
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm border border-gray-700/50 space-y-4 transform transition duration-300 scale-95">
+            <div class="flex justify-between items-center text-white border-b border-gray-700 pb-3">
+                <button id="prevMonth" class="p-2 rounded-full hover:bg-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <span id="monthYear" class="text-lg font-semibold"></span>
+                <button id="nextMonth" class="p-2 rounded-full hover:bg-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+            <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-400">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+            <div id="calendarDays" class="grid grid-cols-7 gap-1 text-center">
+                <!-- Calendar days injected here -->
+            </div>
+            <button id="closeCalendarBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition duration-200">Close</button>
+        </div>
+    </div>
+    <!-- END CUSTOM CALENDAR MODAL -->
+
     <!-- MAIN JAVASCRIPT LOGIC -->
     <script>
         // --- API CONFIGURATION ---
+        // Public Render API URL
         const API_BASE_URL = 'https://dbms-weather-analysis.onrender.com/api'; 
         
         let chartInstance = null;
@@ -204,7 +253,20 @@
         const uniqueCitiesElement = document.getElementById('uniqueCities');
         const metricSelector = document.getElementById('metricSelector'); 
         const historyMessage = document.getElementById('historyMessage');
+        const datePickerBtn = document.getElementById('datePickerBtn');
+        const dateDisplay = document.getElementById('dateDisplay');
+        const dateInput = document.getElementById('date');
+        const calendarModal = document.getElementById('calendarModal');
+        const monthYearSpan = document.getElementById('monthYear');
+        const calendarDaysDiv = document.getElementById('calendarDays');
+        const prevMonthBtn = document.getElementById('prevMonth');
+        const nextMonthBtn = document.getElementById('nextMonth');
+        const closeCalendarBtn = document.getElementById('closeCalendarBtn');
 
+        // --- CALENDAR STATE ---
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        
         // --- CHART METRIC CONFIGURATION ---
         const metricMap = {
             temperature: { 
@@ -245,22 +307,102 @@
             }
         }
 
-        /**
-         * Maps a metric value to a color based on its position in the range.
-         */
         function getMetricColor(value, minVal, maxVal, [startHue, endHue]) {
             if (minVal === maxVal || maxVal === 0 || value === 0) {
                 return 'hsl(210, 30%, 55%)'; 
             }
 
-            // Normalize value to a position between 0 and 1
             const normalized = Math.max(0, Math.min(1, (value - minVal) / (maxVal - minVal)));
-            
-            // Linear interpolation of the hue
             const hue = Math.round(startHue + normalized * (endHue - startHue));
             
             return `hsl(${hue}, 90%, 55%)`; 
         }
+
+        // --- CALENDAR LOGIC ---
+
+        function renderCalendar(month, year) {
+            const today = new Date();
+            const date = new Date(year, month, 1);
+            const firstDayOfMonth = date.getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            monthYearSpan.textContent = `${monthNames[month]} ${year}`;
+            calendarDaysDiv.innerHTML = '';
+
+            // Add empty cells for preceding days
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                calendarDaysDiv.innerHTML += '<div></div>';
+            }
+
+            // Add actual days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDate = new Date(year, month, day);
+                const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                let classes = 'calendar-day cursor-pointer p-2 rounded-full text-gray-300';
+
+                // Check if date is in the future (disable)
+                if (dayDate > today) {
+                    classes = 'day-disabled p-2 text-gray-600 cursor-not-allowed';
+                }
+
+                // Check if date is selected
+                if (dateInput.value === isoDate) {
+                    classes += ' day-selected';
+                }
+
+                calendarDaysDiv.innerHTML += `<div data-date="${isoDate}" class="${classes}">${day}</div>`;
+            }
+
+            // Attach click listeners to the generated days
+            calendarDaysDiv.querySelectorAll('.calendar-day').forEach(dayElement => {
+                if (!dayElement.classList.contains('day-disabled')) {
+                    dayElement.addEventListener('click', (e) => {
+                        const selectedDate = e.target.getAttribute('data-date');
+                        dateInput.value = selectedDate;
+                        dateDisplay.value = selectedDate; // Display friendly format
+                        closeCalendar();
+                    });
+                }
+            });
+        }
+
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar(currentMonth, currentYear);
+        }
+
+        function openCalendar() {
+            calendarModal.classList.remove('hidden');
+            calendarModal.classList.add('flex');
+            datePickerBtn.disabled = true;
+            // Hide form input area to focus on modal (better mobile UX)
+            document.getElementById('weatherForm').classList.add('opacity-20', 'pointer-events-none');
+            // Re-render calendar to highlight current selection
+            renderCalendar(currentMonth, currentYear); 
+        }
+
+        function closeCalendar() {
+            calendarModal.classList.add('hidden');
+            calendarModal.classList.remove('flex');
+            datePickerBtn.disabled = false;
+            document.getElementById('weatherForm').classList.remove('opacity-20', 'pointer-events-none');
+        }
+
+        // Attach calendar listeners
+        datePickerBtn.addEventListener('click', openCalendar);
+        dateDisplay.addEventListener('click', openCalendar);
+        closeCalendarBtn.addEventListener('click', closeCalendar);
+        prevMonthBtn.addEventListener('click', () => changeMonth(-1));
+        nextMonthBtn.addEventListener('click', () => changeMonth(1));
 
         // --- API DATA FETCHING ---
         
@@ -274,7 +416,15 @@
                 const response = await fetch(`${API_BASE_URL}/analysis?metric=${metric}`);
                 
                 if (!response.ok) {
-                    throw new Error(`API returned status ${response.status}`);
+                    // Check if Render server is waking up (cold start)
+                    if (response.status === 503) {
+                         loadingDataText.textContent = "Server waking up (cold start)... Please wait (Retrying).";
+                         setTimeout(fetchAnalysisData, 3000); // Retry after 3 seconds
+                         return;
+                    }
+                    
+                    const errorJson = await response.json();
+                    throw new Error(errorJson.error || `API returned status ${response.status}`);
                 }
                 
                 const data = await response.json();
@@ -285,16 +435,14 @@
                 
             } catch (error) {
                 console.error("Error fetching analysis data:", error);
-                loadingDataText.textContent = "Failed to connect to Node.js API (localhost:3000). Is the server running?";
+                loadingDataText.textContent = "Error: Failed to connect to API or retrieve data.";
                 historyMessage.classList.remove('hidden');
                 updateDataMetrics([]);
                 updateChart([]); // Clear chart on error
-            } finally {
-                loadingDataText.classList.add('hidden');
-            }
+            } 
         }
         
-        // Fetches the raw history data
+        // Fetches the raw history data (added cold start retry logic here too)
         async function fetchHistoryData() {
              historyMessage.classList.add('hidden');
              dataList.innerHTML = `<div class="text-center text-gray-500 p-4">Loading history...</div>`;
@@ -303,7 +451,14 @@
                 const response = await fetch(`${API_BASE_URL}/history`);
                 
                 if (!response.ok) {
-                    throw new Error(`API returned status ${response.status}`);
+                    if (response.status === 503) {
+                         // Cold start retry
+                         setTimeout(fetchHistoryData, 3000); 
+                         return;
+                    }
+                    
+                    const errorJson = await response.json();
+                    throw new Error(errorJson.error || `API returned status ${response.status}`);
                 }
                 
                 const data = await response.json();
@@ -311,7 +466,9 @@
                 
             } catch (error) {
                 console.error("Error fetching history data:", error);
-                dataList.innerHTML = `<p class="text-center text-red-400 py-4">Error connecting to the API to load history.</p>`;
+                dataList.innerHTML = `<p class="text-center text-red-400 py-4">Error: Failed to load recent records. Check console.</p>`;
+            } finally {
+                loadingDataText.classList.add('hidden');
             }
         }
         
@@ -331,14 +488,14 @@
 
             const record = {
                 city: document.getElementById('city').value.trim(),
-                date: document.getElementById('date').value,
+                date: document.getElementById('date').value, // Gets value from hidden input
                 temperature: parseFloat(document.getElementById('temperature').value),
                 humidity: parseInt(document.getElementById('humidity').value, 10),
                 windSpeed: parseFloat(document.getElementById('windSpeed').value)
             };
 
-            if (record.city.length < 2 || isNaN(record.temperature) || isNaN(record.humidity) || isNaN(record.windSpeed)) {
-                showMessage('Please ensure all fields are valid numbers.', 'text-red-400');
+            if (record.city.length < 2 || !record.date || isNaN(record.temperature) || isNaN(record.humidity) || isNaN(record.windSpeed)) {
+                showMessage('Please ensure all fields are filled and valid.', 'text-red-400');
                 setFormLoading(false);
                 return;
             }
@@ -358,6 +515,10 @@
                 
                 showMessage(`Data point for ${record.city} added successfully!`, 'text-green-400');
                 form.reset();
+                
+                // Clear date display inputs after successful submission
+                dateDisplay.value = ''; 
+                dateInput.value = ''; 
                 
                 // Refetch both history and analysis data
                 updateDashboard();
@@ -382,29 +543,37 @@
         function updateDataMetrics(data) {
             const uniqueCities = new Set(data.map(d => d.city_name.toUpperCase().trim())).size;
             
-            totalRecordsElement.textContent = data.length > 0 ? 'LIVE' : '0';
+            totalRecordsElement.textContent = data.length > 0 ? data.length : '0'; // Count of analysis items
             uniqueCitiesElement.textContent = uniqueCities;
         }
         
+        function formatMySQLDate(dateString) {
+             // Formats date from "YYYY-MM-DDT..." or "YYYY-MM-DD" to "YYYY-MM-DD"
+             if (!dateString) return 'N/A';
+             return dateString.split('T')[0];
+        }
+
         function updateDataList(data) {
             dataList.innerHTML = '';
             
             if (data.length === 0) {
-                dataList.innerHTML = `<p class="text-center text-gray-500 py-4">No recent records found in the database.</p>`;
+                dataList.innerHTML = `<p class="text-center text-gray-500 py-4">No recent records found in the database. Try adding one!</p>`;
                 return;
             }
 
             data.forEach(record => {
-                // Ensure date is formatted correctly (it comes from MySQL as a string or Date object)
-                const dateStr = new Date(record.recorded_at).toLocaleString();
+                const formattedDate = formatMySQLDate(record.record_date);
 
                 dataList.innerHTML += `
                     <div class="flex justify-between items-center p-3 rounded-lg bg-gray-600/30 hover:bg-gray-500/50 transition duration-150 border border-gray-700">
                         <div class="flex-grow">
-                            <p class="font-semibold text-white">${record.city_name} (${record.record_date.split('T')[0]})</p>
-                            <p class="text-sm text-gray-300">Temp: <span class="text-cyan-300">${record.temperature}°C</span> | Hum: ${record.humidity}% | Wind: ${record.wind_speed} km/h</p>
+                            <p class="font-semibold text-white">${record.city_name} (${formattedDate})</p>
+                            <p class="text-sm text-gray-300">
+                                Temp: <span class="text-cyan-300">${record.temperature}°C</span> | 
+                                Hum: ${record.humidity}% | 
+                                Wind: ${record.wind_speed} km/h
+                            </p>
                         </div>
-                        <!-- Delete function is omitted here as it requires a DELETE API route on the backend -->
                     </div>
                 `;
             });
@@ -492,6 +661,7 @@
         window.onload = () => {
              // Initial load of all data
              updateDashboard();
+             renderCalendar(currentMonth, currentYear); // Initialize the calendar view
         }
 
     </script>
