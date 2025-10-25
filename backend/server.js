@@ -25,13 +25,13 @@ app.use((req, res, next) => {
 
 // --- 1. MySQL Connection Configuration ---
 const dbConfig = {
-    host: 'localhost',
-    user: 'root',
+    // IMPORTANT: REPLACE WITH YOUR NGROK HOST AND PORT
+    host: 'YOUR_NGROK_HOST_HERE', // e.g., '0.tcp.ngrok.io'
+    user: 'root', 
     password: '', 
     database: 'nexus_db', 
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    port: NGROK_PORT_HERE, // e.g., 12345
+    // ... (rest of the config is the same)
 };
 
 // Create a connection pool to manage database connections efficiently
