@@ -1,41 +1,32 @@
-// --- BACKEND API SERVER (Node.js/Express) ---
-// This file connects the Frontend (index.html) to the MySQL Database.
-
 const express = require('express');
-const mysql = require('mysql2/promise'); // Using promise-based client
+const mysql = require('mysql2/promise');
 
 const app = express();
 const port = 3000;
 
-// Middleware setup to allow frontend (index.html) to talk to this server
-// We use manual headers instead of the 'cors' module to fix local installation issues.
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*'); // Allow all origins for this project
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,POST');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
     next();
 });
 
-app.use(express.json()); // To parse JSON bodies
+app.use(express.json());
 
-// --- 1. MySQL Connection Configuration ---
 const dbConfig = {
-    // !!! FREESQLDATABASE.COM LIVE CREDENTIALS !!!
-    host: 'sql12.freesqldatabase.com',       // DatabaseHost
-    user: 'sql12804470',                     // DatabaseUsername
-    password: 'fiKzxrFlYh',                 // DatabasePassword
-    database: 'sql12804470',                 // DatabaseName (often same as username)
-    port: 3306, // Standard MySQL port
+    host: 'sql12.freesqldatabase.com',
+    user: 'sql12804470',
+    password: 'fiKzxrFlYh',
+    database: 'sql12804470',
+    port: 3306,
     
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 };
 
-// Create a connection pool to manage database connections efficiently
 const pool = mysql.createPool(dbConfig);
 
-// Test the connection on startup
 pool.getConnection()
     .then(connection => {
         console.log("SUCCESS: Connected to MySQL database!");
@@ -43,16 +34,12 @@ pool.getConnection()
     })
     .catch(err => {
         console.error("FAILURE: Cannot connect to MySQL.");
-        console.error("Check 1: Is your code using the correct FREESQLDATABASE credentials?");
-        console.error("Check 2: Is the Render server's IP whitelisted on Freesqldatabase.com's firewall?");
         console.error("Error Detail:", err.message);
     });
 
-// --- 2. API Endpoint for Data Analysis (The Visualization Data) ---
-// ... (rest of the server.js code remains the same)
 app.get('/api/analysis', async (req, res) => {
-    const metric = req.query.metric || 'temperature'; 
-    const validMetrics = ['temperature', 'humidity', 'wind_speed']; 
+    const metric = req.query.metric || 'temperature';
+    const validMetrics = ['temperature', 'humidity', 'wind_speed'];
     if (!validMetrics.includes(metric)) {
         return res.status(400).json({ error: 'Invalid metric selected.' });
     }
@@ -69,16 +56,12 @@ app.get('/api/analysis', async (req, res) => {
 
     try {
         const [rows] = await pool.query(sql);
-        res.json(rows); 
+        res.json(rows);
     } catch (error) {
         console.error('Error executing analysis query:', error);
-        console.error('SQL Error Code:', error.code);
-        console.error('SQL Message:', error.sqlMessage);
         res.status(500).json({ error: 'Failed to retrieve analysis data due to database error.' });
     }
 });
-
-// --- 3. API Endpoint for Adding New Data ---
 
 app.post('/api/data', async (req, res) => {
     const { city, date, temperature, humidity, windSpeed } = req.body;
@@ -116,8 +99,6 @@ app.post('/api/data', async (req, res) => {
     } catch (error) {
         if (connection) await connection.rollback();
         console.error('Error processing data insertion:', error);
-        console.error('SQL Error Code:', error.code);
-        console.error('SQL Message:', error.sqlMessage);
         
         if (error.code === 'ER_DUP_ENTRY') {
              return res.status(409).json({ error: 'Data for this city on this date already exists.' });
@@ -127,8 +108,6 @@ app.post('/api/data', async (req, res) => {
         if (connection) connection.release();
     }
 });
-
-// --- 4. API Endpoint for Recent History ---
 
 app.get('/api/history', async (req, res) => {
     const sql = `
@@ -150,14 +129,10 @@ app.get('/api/history', async (req, res) => {
         res.json(rows);
     } catch (error) {
         console.error('Error executing history query:', error);
-        console.error('SQL Error Code:', error.code);
-        console.error('SQL Message:', error.sqlMessage);
         res.status(500).json({ error: 'Failed to retrieve history data due to database error.' });
     }
 });
 
-
-// --- 5. Start Server ---
 
 app.listen(port, () => {
     console.log(`SERVER STATUS: Backend API running at http://localhost:${port}`);
