@@ -8,10 +8,9 @@ For the **initial request**, please expect a **10–15 second delay** before the
 
 ##  Live Deployment and Access
 
-| Component | URL | Status |
+| Platform | URL | Status |
 | :--- | :--- | :--- |
-| **Frontend (Netlify)** | [https://dbms-weather-app.netlify.app/] | Live |
-| **Backend API (Render)** | https://dbms-weather-analysis.onrender.com | Live |
+| **Netlify** | https://dbms-weather-app.netlify.app/ | Live |
 
 ###  Cold Start Notice
 
