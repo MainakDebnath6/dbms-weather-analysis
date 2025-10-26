@@ -1,53 +1,57 @@
-# dbms-weather-analysis
-# Nexus Weather Analytics Dashboard
+#  Nexus Weather Analytics Dashboard 
 
 ###  Cold Start Notice
-As we are using a free tier database hosting platform
-For the **first load**, the server must "wake up." Please wait 10–15 seconds for the charts and data history to populate. Subsequent requests are fast.
 
-###  Project Stack and Architecture
+As the backend is hosted on Render's free tier, the server will "spin down" after inactivity to conserve resources.
+
+For the **initial request**, please expect a **10–15 second delay** before the dashboard's data populates. Subsequent requests are fast.
+
+##  Live Deployment and Access
+
+| Component | URL | Status |
+| :--- | :--- | :--- |
+| **Frontend (Netlify)** | [https://dbms-weather-app.netlify.app/] | Live |
+| **Backend API (Render)** | https://dbms-weather-analysis.onrender.com | Live |
+
+###  Cold Start Notice
+
+As the backend is hosted on Render's free tier, the server will "spin down" after inactivity to conserve resources.
+
+For the **initial request**, please expect a **10–15 second delay** before the dashboard's data populates. Subsequent requests are fast.
+
+---
+
+##  Project Stack and Architecture
+
+The application uses a stable, three-tier architecture that meets the core project requirement of using a relational database.
 
 | Component | Technology | Role |
 | :--- | :--- | :--- |
-| Database | MySQL | Data storage and execution of aggregation queries. |
-| Backend API | Node.js (Express) | Handles API requests (`/data`, `/history`, `/analysis`), connects to MySQL, and processes server-side logic. |
-| Frontend UI | HTML5, JavaScript, Tailwind CSS | Provides the user interface for data entry, display, and visualization. |
-| Visualization | Chart.js | Renders dynamic, metric-specific bar charts for comparative analysis. |
-| Deployment | Render.com | Hosts the backend API for public accessibility. |
+| **Database (DBMS)** | MySQL (via Freesqldatabase.com) | Hosts the permanent relational database and executes all core SQL aggregation and retrieval queries. |
+| **Backend API** | Node.js (Express) | Serves as the middle layer, validating data, securing the connection to the external MySQL database, and providing RESTful endpoints. |
+| **Frontend UI** | HTML5, Tailwind CSS, JavaScript | Provides the dynamic, responsive dashboard UI, custom calendar modal, and asynchronous data fetching. |
+| **Visualization** | Chart.js | Renders dynamic, metric-specific bar charts with calculated color-grading for comparative analysis. |
+| **Deployment** | Render.com & Netlify | Render hosts the live API; Netlify hosts the static frontend. |
 
-***
+---
 
-###  Group Contribution and Ownership
+##  Key Areas of Achievement (DBMS Focus)
 
-This assignment was a collaborative effort by the following team members:
+This project demonstrates proficiency in advanced SQL and database integrity management:
+
+| Area | SQL Implementation | Project Significance |
+| :--- | :--- | :--- |
+| **Data Integrity** | Utilized Foreign Key constraint (city_id) and a compound UNIQUE constraint ((city_id, record_date)) directly on the MySQL tables. | Guarantees that data is relational and prevents duplicate data entry for the same city on the same day. |
+| **Complex Aggregation** | Executes SELECT AVG(metric) AS average_value ... GROUP BY city_name queries dynamically within the API. | Fulfills the core requirement for data analysis by calculating averages across variable metrics (Temp, Humidity, Wind Speed). |
+| **Transactional Logic** | The POST endpoint uses a database transaction (BEGIN TRANSACTION / COMMIT) to handle the conditional insertion of new cities and records efficiently. | Ensures data integrity and consistency during the critical data entry process. |
+| **Deployment Success** | Successfully connected a Node.js server (hosted on Render) to an external public MySQL database (Freesqldatabase.com) across the internet. | Demonstrates mastery of three-tier architecture and network connectivity essentials. |
+
+---
+
+##  Group Contribution and Ownership
 
 | Name | Roll Number | Key Areas of Contribution |
 | :--- | :--- | :--- |
 | Mainak Debnath | 18 | API Development (Node.js/Express), MySQL Schema Design, Data Validation. |
 | Priyanshu Kumar | 19 | Frontend Structure (HTML/Tailwind), Data Entry Form Logic, Custom Calendar Implementation. |
 | Ritam Saha | 72 | Chart Integration (Chart.js), Dynamic UI Rendering, Data Fetching & Visualization Logic. |
-
-***
-
-###  How the Project Was Made (Development Process)
-
-We followed a three-step development process focused on separation of concerns:
-
-1.  Database Layer (DBMS Core):
-    * Designed a relational schema in **MySQL** to efficiently store weather records (`city_name`, `record_date`, `temperature`, `humidity`, `wind_speed`).
-    * The database is accessed via the Node.js API to perform **CRUD** operations (Create for new data entry) and execute complex **aggregate queries** for the analytical charts (e.g., calculating the average metric per city).
-
-2.  API Layer (The Bridge):
-    * We built a RESTful API using **Node.js/Express**.
-    * Three key endpoints were created to serve the frontend:
-        * `/api/data` (`POST`): Inserts new weather records into the MySQL database.
-        * `/api/history` (`GET`): Fetches the recent raw data for the history list.
-        * `/api/analysis` (`GET`): Fetches aggregated data (e.g., average metric per city) to power the charts.
-
-3.  Frontend Layer (User Experience):
-    * The UI was styled using **Tailwind CSS** for a dark, data-centric aesthetic.
-    * JavaScript logic handles user interactions (form submission, date selection, metric change).
-    * The dashboard dynamically re-fetches and updates both the **data metrics** and the **visualizations** upon any new data entry, showcasing effective real-time data flow from the database.
-
-***
-
