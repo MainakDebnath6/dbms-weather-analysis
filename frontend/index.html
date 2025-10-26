@@ -4,27 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus Weather Analytics</title>
-    <!-- Load Tailwind CSS -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛈️</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Chart.js for beautiful charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
-        /* --- CORE STYLES & VISUAL APPEAL --- */
         :root {
-            --primary-color: #00d4ff; /* Cyan accent */
-            --bg-color: #0b1120; /* Deep Dark Blue */
-            --card-color: #1a253f; /* Slightly lighter deep blue */
+            --primary-color: #00d4ff;
+            --bg-color: #0b1120;
+            --card-color: #1a253f;
         }
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
-            color: #d1d5db; /* Gray 300 */
-            /* Added smooth transition for background changes */
-            transition: background-color 0.5s ease-in-out; 
+            color: #d1d5db;
+            transition: background-color 0.5s ease-in-out;
             position: relative;
         }
-        
-        /* Subtle Background Gradient Effect - Optimized */
         body::before {
             content: '';
             position: fixed;
@@ -36,8 +31,6 @@
             z-index: -1;
             opacity: 0.95;
         }
-
-        /* Card Style: Glassy, Shadowed, and Interactive */
         .card {
             background-color: var(--card-color);
             border: 1px solid rgba(0, 212, 255, 0.1);
@@ -48,10 +41,8 @@
             transform: translateY(-5px);
             box-shadow: 0 20px 40px rgba(0, 212, 255, 0.15), 0 0 10px var(--primary-color);
         }
-        
-        /* Primary Button Style */
         .btn-primary {
-            background-image: linear-gradient(to right, #4c62f8, #00d4ff); 
+            background-image: linear-gradient(to right, #4c62f8, #00d4ff);
             letter-spacing: 0.5px;
             transition: all 0.3s ease-in-out;
         }
@@ -59,10 +50,8 @@
             box-shadow: 0 6px 18px rgba(0, 212, 255, 0.4);
             transform: scale(1.02);
         }
-        
-        /* Input Field Styling */
         input, select {
-            background-color: #0d1326; /* Darker input */
+            background-color: #0d1326;
             border-color: #4b5563;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
@@ -70,8 +59,6 @@
             border-color: var(--primary-color) !important;
             box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.3);
         }
-
-        /* Custom Calendar Styles */
         #calendarModal {
             z-index: 1000;
         }
@@ -87,12 +74,20 @@
             font-weight: bold;
             border-radius: 9999px;
         }
+        /* Custom styles for the enhanced footer */
+        .enhanced-footer {
+            background-color: rgba(26, 37, 63, 0.7); /* Slightly darker, semi-transparent card color */
+            border-top: 2px solid var(--primary-color);
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.5);
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+            margin-top: auto; /* Push to bottom */
+        }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-12 flex flex-col items-center">
+<body class="min-h-screen p-4 md:p-12 flex flex-col items-center justify-between">
 
-    <!-- DASHBOARD VIEW -->
-    <div id="dashboardView" class="w-full max-w-7xl mx-auto">
+    <div id="dashboardView" class="w-full max-w-7xl mx-auto mb-10">
         <header class="mb-10 flex flex-col md:flex-row justify-between items-center text-center md:text-left border-b border-gray-700 pb-4">
             <div>
                 <h1 class="text-5xl font-extrabold text-white tracking-tight">Nexus <span class="text-[var(--primary-color)]">Analytics</span></h1>
@@ -100,12 +95,9 @@
             </div>
         </header>
 
-        <!-- Main Grid Layout -->
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- Column 1: Data Entry -->
             <div class="lg:col-span-1 space-y-8">
-                <!-- Data Entry Card -->
                 <div class="card p-6 rounded-xl space-y-6">
                     <h2 class="text-2xl font-semibold border-b border-gray-600 pb-3 text-white flex items-center">
                         <svg class="w-6 h-6 mr-2 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -116,7 +108,6 @@
                             <label for="city" class="block text-sm font-medium text-gray-400 mb-1">City/Location</label>
                             <input type="text" id="city" required placeholder="e.g., London, Tokyo, New York" class="w-full p-3 rounded-lg border focus:ring-blue-500 transition duration-150">
                         </div>
-                        <!-- Custom Date Picker Input Field -->
                         <div class="relative">
                             <label for="dateDisplay" class="block text-sm font-medium text-gray-400 mb-1">Date</label>
                             <div id="dateDisplayContainer" class="flex">
@@ -125,7 +116,6 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </button>
                             </div>
-                            <!-- Hidden input field to hold the actual YYYY-MM-DD value -->
                             <input type="hidden" id="date" name="date" required>
                         </div>
                         <div class="grid grid-cols-3 gap-4">
@@ -150,10 +140,9 @@
                     <p id="messageBox" class="text-sm text-center pt-2"></p>
                 </div>
                 
-                <!-- New: Stats Panel -->
                 <div class="card p-6 rounded-xl">
                     <h2 class="text-2xl font-semibold border-b border-gray-600 pb-3 text-white flex items-center">
-                         <svg class="w-6 h-6 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0h4m-4 0h.01M9 19h4m5 0v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+                           <svg class="w-6 h-6 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0h4m-4 0h.01M9 19h4m5 0v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
                         Data Metrics
                     </h2>
                     <div class="mt-4 grid grid-cols-2 gap-4">
@@ -169,17 +158,12 @@
                 </div>
             </div>
 
-
-            <!-- Column 2 & 3: Visualization and History -->
             <div class="lg:col-span-2 space-y-8">
-                <!-- Visualization Card -->
                 <div class="card p-6 rounded-xl">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-600 pb-3 mb-4">
                         <h2 class="text-2xl font-semibold text-white flex items-center mb-2 sm:mb-0">
-                            <svg class="w-6 h-6 mr-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 10h18"></path></svg>
                             City Metric Comparison
                         </h2>
-                        <!-- Metric Selector -->
                         <div class="flex items-center space-x-2">
                             <label for="metricSelector" class="text-sm font-medium text-gray-400">View Metric:</label>
                             <select id="metricSelector" class="p-2 rounded-lg bg-gray-900 border border-gray-600 text-white text-sm focus:ring-blue-500">
@@ -194,14 +178,11 @@
                     </div>
                 </div>
 
-                <!-- History Card -->
                 <div class="card p-6 rounded-xl">
                     <h2 class="text-2xl font-semibold border-b border-gray-600 pb-3 text-white flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.592 1M12 21a9 9 0 100-18 9 9 0 000 18z"></path></svg>
                         Recent Data History (From MySQL)
                     </h2>
                     <div id="dataList" class="mt-4 space-y-3 max-h-64 overflow-y-auto pr-2">
-                        <!-- Data items will be injected here -->
                         <div class="text-center text-gray-500 p-4" id="loadingDataText">Fetching data from API...</div>
                     </div>
                     <p id="historyMessage" class="text-sm text-center text-red-400 pt-2 hidden">Error loading history. Check API connection.</p>
@@ -210,7 +191,21 @@
         </main>
     </div>
 
-    <!-- CUSTOM CALENDAR MODAL -->
+    <footer class="w-full enhanced-footer">
+        <div class="w-full max-w-7xl mx-auto text-center">
+            <p class="text-gray-400 mb-2 text-base">
+                Project for DBMS Assignment by:
+            </p>
+            <div class="text-lg font-bold flex flex-wrap justify-center space-x-4">
+                <span class="text-[var(--primary-color)]">Mainak Debnath (18)</span>
+                <span class="text-gray-500">|</span>
+                <span class="text-[var(--primary-color)]">Priyanshu Kumar (19)</span>
+                <span class="text-gray-500">|</span>
+                <span class="text-[var(--primary-color)]">Ritam Saha (72)</span>
+            </div>
+        </div>
+    </footer>
+
     <div id="calendarModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center transition-opacity duration-300">
         <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm border border-gray-700/50 space-y-4 transform transition duration-300 scale-95">
             <div class="flex justify-between items-center text-white border-b border-gray-700 pb-3">
@@ -226,22 +221,15 @@
                 <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
             </div>
             <div id="calendarDays" class="grid grid-cols-7 gap-1 text-center">
-                <!-- Calendar days injected here -->
             </div>
             <button id="closeCalendarBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition duration-200">Close</button>
         </div>
     </div>
-    <!-- END CUSTOM CALENDAR MODAL -->
 
-    <!-- MAIN JAVASCRIPT LOGIC -->
     <script>
-        // --- API CONFIGURATION ---
-        // Public Render API URL
         const API_BASE_URL = 'https://dbms-weather-analysis.onrender.com/api'; 
-        
         let chartInstance = null;
         
-        // --- DOM Elements ---
         const messageBox = document.getElementById('messageBox');
         const form = document.getElementById('weatherForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -263,31 +251,27 @@
         const nextMonthBtn = document.getElementById('nextMonth');
         const closeCalendarBtn = document.getElementById('closeCalendarBtn');
 
-        // --- CALENDAR STATE ---
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
         
-        // --- CHART METRIC CONFIGURATION ---
         const metricMap = {
             temperature: { 
                 label: 'Average Temperature', 
                 unit: '°C', 
-                hueRange: [240, 0] // Blue (Cool) to Red (Hot)
+                hueRange: [240, 0]
             },
             wind_speed: { 
                 label: 'Average Wind Speed', 
                 unit: 'km/h', 
-                hueRange: [240, 40] // Blue (Low) to Yellow/Orange (High)
+                hueRange: [240, 40]
             },
             humidity: { 
                 label: 'Average Humidity', 
                 unit: '%', 
-                hueRange: [200, 120] // Cyan (Dry) to Green (Wet)
+                hueRange: [200, 120]
             }
         };
 
-        // --- UTILITY FUNCTIONS ---
-        
         function showMessage(msg, className) {
             messageBox.textContent = msg;
             messageBox.className = `text-sm text-center pt-2 ${className || 'text-green-400'}`;
@@ -309,16 +293,14 @@
 
         function getMetricColor(value, minVal, maxVal, [startHue, endHue]) {
             if (minVal === maxVal || maxVal === 0 || value === 0) {
-                return 'hsl(210, 30%, 55%)'; 
+                return 'hsl(210, 30%, 55%)';
             }
 
             const normalized = Math.max(0, Math.min(1, (value - minVal) / (maxVal - minVal)));
             const hue = Math.round(startHue + normalized * (endHue - startHue));
             
-            return `hsl(${hue}, 90%, 55%)`; 
+            return `hsl(${hue}, 90%, 55%)`;
         }
-
-        // --- CALENDAR LOGIC ---
 
         function renderCalendar(month, year) {
             const today = new Date();
@@ -330,24 +312,21 @@
             monthYearSpan.textContent = `${monthNames[month]} ${year}`;
             calendarDaysDiv.innerHTML = '';
 
-            // Add empty cells for preceding days
             for (let i = 0; i < firstDayOfMonth; i++) {
                 calendarDaysDiv.innerHTML += '<div></div>';
             }
 
-            // Add actual days
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayDate = new Date(year, month, day);
+                dayDate.setHours(0, 0, 0, 0);
                 const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
                 let classes = 'calendar-day cursor-pointer p-2 rounded-full text-gray-300';
 
-                // Check if date is in the future (disable)
                 if (dayDate > today) {
                     classes = 'day-disabled p-2 text-gray-600 cursor-not-allowed';
                 }
 
-                // Check if date is selected
                 if (dateInput.value === isoDate) {
                     classes += ' day-selected';
                 }
@@ -355,13 +334,12 @@
                 calendarDaysDiv.innerHTML += `<div data-date="${isoDate}" class="${classes}">${day}</div>`;
             }
 
-            // Attach click listeners to the generated days
             calendarDaysDiv.querySelectorAll('.calendar-day').forEach(dayElement => {
                 if (!dayElement.classList.contains('day-disabled')) {
                     dayElement.addEventListener('click', (e) => {
                         const selectedDate = e.target.getAttribute('data-date');
                         dateInput.value = selectedDate;
-                        dateDisplay.value = selectedDate; // Display friendly format
+                        dateDisplay.value = selectedDate;
                         closeCalendar();
                     });
                 }
@@ -384,9 +362,7 @@
             calendarModal.classList.remove('hidden');
             calendarModal.classList.add('flex');
             datePickerBtn.disabled = true;
-            // Hide form input area to focus on modal (better mobile UX)
             document.getElementById('weatherForm').classList.add('opacity-20', 'pointer-events-none');
-            // Re-render calendar to highlight current selection
             renderCalendar(currentMonth, currentYear); 
         }
 
@@ -397,16 +373,12 @@
             document.getElementById('weatherForm').classList.remove('opacity-20', 'pointer-events-none');
         }
 
-        // Attach calendar listeners
         datePickerBtn.addEventListener('click', openCalendar);
         dateDisplay.addEventListener('click', openCalendar);
         closeCalendarBtn.addEventListener('click', closeCalendar);
         prevMonthBtn.addEventListener('click', () => changeMonth(-1));
         nextMonthBtn.addEventListener('click', () => changeMonth(1));
 
-        // --- API DATA FETCHING ---
-        
-        // Fetches aggregated data for the chart
         async function fetchAnalysisData() {
             loadingDataText.textContent = "Fetching analysis data...";
             historyMessage.classList.add('hidden');
@@ -416,11 +388,10 @@
                 const response = await fetch(`${API_BASE_URL}/analysis?metric=${metric}`);
                 
                 if (!response.ok) {
-                    // Check if Render server is waking up (cold start)
                     if (response.status === 503) {
-                         loadingDataText.textContent = "Server waking up (cold start)... Please wait (Retrying).";
-                         setTimeout(fetchAnalysisData, 3000); // Retry after 3 seconds
-                         return;
+                        loadingDataText.textContent = "Server waking up (cold start)... Please wait (Retrying).";
+                        setTimeout(fetchAnalysisData, 3000);
+                        return;
                     }
                     
                     const errorJson = await response.json();
@@ -429,7 +400,6 @@
                 
                 const data = await response.json();
                 
-                // Update dashboard with fetched analysis data
                 updateDataMetrics(data);
                 updateChart(data); 
                 
@@ -438,23 +408,21 @@
                 loadingDataText.textContent = "Error: Failed to connect to API or retrieve data.";
                 historyMessage.classList.remove('hidden');
                 updateDataMetrics([]);
-                updateChart([]); // Clear chart on error
+                updateChart([]);
             } 
         }
         
-        // Fetches the raw history data (added cold start retry logic here too)
         async function fetchHistoryData() {
-             historyMessage.classList.add('hidden');
-             dataList.innerHTML = `<div class="text-center text-gray-500 p-4">Loading history...</div>`;
+            historyMessage.classList.add('hidden');
+            dataList.innerHTML = `<div class="text-center text-gray-500 p-4">Loading history...</div>`;
 
-             try {
+            try {
                 const response = await fetch(`${API_BASE_URL}/history`);
                 
                 if (!response.ok) {
                     if (response.status === 503) {
-                         // Cold start retry
-                         setTimeout(fetchHistoryData, 3000); 
-                         return;
+                        setTimeout(fetchHistoryData, 3000); 
+                        return;
                     }
                     
                     const errorJson = await response.json();
@@ -472,23 +440,18 @@
             }
         }
         
-        // --- CORE APPLICATION LOGIC ---
-        
         function updateDashboard() {
-             // Fetch both data sources concurrently
-             fetchAnalysisData();
-             fetchHistoryData();
+            fetchAnalysisData();
+            fetchHistoryData();
         }
 
-
-        // 1. Add Data (Write operation to API)
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             setFormLoading(true);
 
             const record = {
                 city: document.getElementById('city').value.trim(),
-                date: document.getElementById('date').value, // Gets value from hidden input
+                date: document.getElementById('date').value,
                 temperature: parseFloat(document.getElementById('temperature').value),
                 humidity: parseInt(document.getElementById('humidity').value, 10),
                 windSpeed: parseFloat(document.getElementById('windSpeed').value)
@@ -516,11 +479,9 @@
                 showMessage(`Data point for ${record.city} added successfully!`, 'text-green-400');
                 form.reset();
                 
-                // Clear date display inputs after successful submission
                 dateDisplay.value = ''; 
                 dateInput.value = ''; 
                 
-                // Refetch both history and analysis data
                 updateDashboard();
 
             } catch (error) {
@@ -531,26 +492,20 @@
             }
         });
         
-        // Listener for Metric Selector Change
         metricSelector.addEventListener('change', () => {
-            // Refetch analysis data only when metric changes
             fetchAnalysisData();
         });
 
-
-        // --- UI RENDERING ---
-        
         function updateDataMetrics(data) {
             const uniqueCities = new Set(data.map(d => d.city_name.toUpperCase().trim())).size;
             
-            totalRecordsElement.textContent = data.length > 0 ? data.length : '0'; // Count of analysis items
+            totalRecordsElement.textContent = data.length > 0 ? data.length : '0';
             uniqueCitiesElement.textContent = uniqueCities;
         }
         
         function formatMySQLDate(dateString) {
-             // Formats date from "YYYY-MM-DDT..." or "YYYY-MM-DD" to "YYYY-MM-DD"
-             if (!dateString) return 'N/A';
-             return dateString.split('T')[0];
+            if (!dateString) return 'N/A';
+            return dateString.split('T')[0];
         }
 
         function updateDataList(data) {
@@ -579,22 +534,16 @@
             });
         }
 
-
-        // --- CHARTING LOGIC (Chart.js) ---
-
         function updateChart(data) {
             const selectedMetric = metricSelector.value;
-            // Get configuration for the selected metric
             const configData = metricMap[selectedMetric] || metricMap.temperature;
 
-            // 1. Prepare Data
             const labels = data.map(d => d.city_name);
             const averageValues = data.map(d => {
-                 const value = parseFloat(d.average_value);
-                 return isNaN(value) ? 0 : value; // Ensure no NaN issues
+                const value = parseFloat(d.average_value);
+                return isNaN(value) ? 0 : value;
             });
             
-            // 2. Dynamic Color Grading
             const valuesForRange = averageValues.filter(v => v !== 0); 
             const minVal = valuesForRange.length > 0 ? Math.min(...valuesForRange) : 0;
             const maxVal = valuesForRange.length > 0 ? Math.max(...valuesForRange) : 0;
@@ -647,21 +596,18 @@
             const ctx = document.getElementById('tempChart').getContext('2d');
 
             if (chartInstance) {
-                // Update existing chart
                 chartInstance.data = chartData;
                 chartInstance.options.scales.y.title.text = `${configData.label} (${configData.unit})`;
                 chartInstance.options.scales.y.ticks.callback = function(value) { return value + configData.unit; };
                 chartInstance.update();
             } else {
-                // Create new chart
                 chartInstance = new Chart(ctx, config);
             }
         }
 
         window.onload = () => {
-             // Initial load of all data
-             updateDashboard();
-             renderCalendar(currentMonth, currentYear); // Initialize the calendar view
+            updateDashboard();
+            renderCalendar(currentMonth, currentYear);
         }
 
     </script>
